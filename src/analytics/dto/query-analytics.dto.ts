@@ -1,5 +1,3 @@
-// src/analytics/dto/query-analytics.dto.ts
-
 import { IsDateString, IsEnum, IsOptional, IsUUID } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 

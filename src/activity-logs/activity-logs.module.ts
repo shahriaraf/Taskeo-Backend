@@ -1,5 +1,3 @@
-// src/activity-logs/activity-logs.module.ts
-
 import { Module } from '@nestjs/common';
 import { ActivityLogsService } from './activity-logs.service';
 import { ActivityLogsController } from './activity-logs.controller';

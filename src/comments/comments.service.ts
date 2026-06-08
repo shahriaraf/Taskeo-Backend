@@ -1,5 +1,3 @@
-// src/comments/comments.service.ts
-
 import {
   Injectable,
   NotFoundException,

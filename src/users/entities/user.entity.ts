@@ -1,4 +1,3 @@
-// src/users/entities/user.entity.ts
 import { UserRole } from '@prisma/client';
 
 export class User {

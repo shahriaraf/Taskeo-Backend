@@ -1,5 +1,3 @@
-// src/common/exceptions/app.exception.ts
-
 import { HttpException, HttpStatus } from '@nestjs/common';
 
 export class AppException extends HttpException {

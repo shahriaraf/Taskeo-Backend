@@ -1,5 +1,3 @@
-// src/attachments/attachments.service.ts
-
 import {
   Injectable,
   NotFoundException,

@@ -1,5 +1,3 @@
-// src/auth/dto/change-password.dto.ts
-
 import { IsNotEmpty, IsString, Matches, MinLength } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 

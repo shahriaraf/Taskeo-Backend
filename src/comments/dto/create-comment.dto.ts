@@ -1,5 +1,3 @@
-// src/comments/dto/create-comment.dto.ts
-
 import { IsNotEmpty, IsString, IsUUID, MaxLength } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 

@@ -1,5 +1,3 @@
-// src/attachments/entities/attachment.entity.ts
-
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class AttachmentUploaderEntity {

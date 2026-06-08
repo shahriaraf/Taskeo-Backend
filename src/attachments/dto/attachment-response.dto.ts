@@ -1,5 +1,3 @@
-// src/attachments/dto/attachment-response.dto.ts
-
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class UploaderDto {

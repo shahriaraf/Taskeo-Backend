@@ -1,5 +1,3 @@
-// src/notifications/notifications.controller.ts
-
 import {
   Controller,
   Get,

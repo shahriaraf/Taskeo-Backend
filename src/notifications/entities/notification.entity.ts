@@ -1,4 +1,3 @@
-// src/notifications/entities/notification.entity.ts
 import { NotificationType } from '@prisma/client';
 
 export class Notification {

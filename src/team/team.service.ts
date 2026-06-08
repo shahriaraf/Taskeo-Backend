@@ -1,5 +1,3 @@
-// src/team/team.service.ts
-
 import {
   Injectable,
   NotFoundException,

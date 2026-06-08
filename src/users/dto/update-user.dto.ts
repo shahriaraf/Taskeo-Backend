@@ -1,5 +1,3 @@
-// src/users/dto/update-user.dto.ts
-
 import { IsEnum, IsOptional, IsString, IsUrl, MaxLength } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { UserRole } from '@prisma/client';

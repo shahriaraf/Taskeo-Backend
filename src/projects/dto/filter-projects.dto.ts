@@ -1,5 +1,3 @@
-// src/projects/dto/filter-projects.dto.ts
-
 import { IsEnum, IsOptional, IsString, IsInt, Min } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';

@@ -1,5 +1,3 @@
-// src/activity-logs/dto/query-activity-logs.dto.ts
-
 import { IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { ActivityAction } from '@prisma/client';

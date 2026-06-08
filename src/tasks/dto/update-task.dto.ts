@@ -1,5 +1,3 @@
-// src/tasks/dto/update-task.dto.ts
-
 import {
   IsDateString,
   IsEnum,

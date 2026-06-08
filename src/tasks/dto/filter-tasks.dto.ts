@@ -1,5 +1,3 @@
-// src/tasks/dto/filter-tasks.dto.ts
-
 import { IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';

@@ -1,5 +1,3 @@
-// src/team/team.controller.ts
-
 import {
   Controller,
   Get,

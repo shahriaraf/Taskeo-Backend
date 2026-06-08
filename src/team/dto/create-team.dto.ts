@@ -1,5 +1,3 @@
-// src/team/dto/create-team.dto.ts
-
 import { IsEnum, IsNotEmpty, IsOptional, IsUUID } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ProjectMemberRole } from '@prisma/client';

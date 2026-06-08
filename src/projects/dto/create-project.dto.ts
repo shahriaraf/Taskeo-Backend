@@ -1,5 +1,3 @@
-// src/projects/dto/create-project.dto.ts
-
 import {
   IsDateString,
   IsEnum,

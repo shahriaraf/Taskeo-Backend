@@ -1,5 +1,3 @@
-// src/projects/projects.controller.ts
-
 import {
   Controller,
   Get,

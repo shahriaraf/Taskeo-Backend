@@ -1,4 +1,3 @@
-// src/team/entities/team.entity.ts
 import { ProjectMemberRole } from '@prisma/client';
 
 export class ProjectMember {

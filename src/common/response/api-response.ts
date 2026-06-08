@@ -1,5 +1,3 @@
-// src/common/response/api-response.ts
-
 export class ApiResponse<T> {
   success: boolean;
   message: string;

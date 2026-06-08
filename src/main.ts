@@ -92,11 +92,11 @@ async function bootstrap() {
 
   await app.listen(port);
 
-  console.log(`🚀 Server running on: http://localhost:${port}`);
-  console.log(`📚 Swagger docs: http://localhost:${port}/api/docs`);
+  console.log(`Server running on: http://localhost:${port}`);
+  console.log(`Swagger docs: http://localhost:${port}/api/docs`);
 }
 
 bootstrap().catch((error) => {
-  console.error('❌ Bootstrap failed:', error);
+  console.error('Bootstrap failed:', error);
   process.exit(1);
 });

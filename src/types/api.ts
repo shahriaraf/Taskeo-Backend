@@ -1,4 +1,3 @@
-// src/types/api.ts
 export interface PaginatedResponse<T> {
   data: T[];
   meta: {

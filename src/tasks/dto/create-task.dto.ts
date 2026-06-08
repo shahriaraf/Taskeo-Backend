@@ -1,5 +1,3 @@
-// src/tasks/dto/create-task.dto.ts
-
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { TaskPriority, TaskStatus } from '@prisma/client';
 import {

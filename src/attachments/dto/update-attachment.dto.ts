@@ -1,5 +1,3 @@
-// src/attachments/dto/upload-attachment.dto.ts
-
 import { IsOptional, IsString, IsUUID } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 

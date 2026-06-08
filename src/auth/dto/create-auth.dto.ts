@@ -1,5 +1,3 @@
-// src/auth/dto/create-auth.dto.ts
-
 import {
   IsEmail,
   IsEnum,

@@ -1,5 +1,3 @@
-// src/activity-logs/activity-logs.controller.ts
-
 import {
   Controller,
   Get,

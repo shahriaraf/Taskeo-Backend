@@ -1,5 +1,3 @@
-// src/events/events.gateway.ts
-
 import {
   WebSocketGateway,
   WebSocketServer,

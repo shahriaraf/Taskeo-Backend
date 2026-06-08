@@ -1,5 +1,3 @@
-// src/activity-logs/entities/activity-log.entity.ts
-
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ActivityAction } from '@prisma/client';
 

@@ -1,5 +1,3 @@
-// src/activity-logs/dto/create-activity-log.dto.ts
-
 import {
   IsEnum,
   IsJSON,
@@ -18,7 +16,7 @@ export class CreateActivityLogDto {
 
   @ApiProperty({ enum: ActivityAction })
   @IsEnum(ActivityAction)
-  action: ActivityAction;
+  action!: ActivityAction;
 
   @ApiPropertyOptional({ example: 'task' })
   @IsOptional()

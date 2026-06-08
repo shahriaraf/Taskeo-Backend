@@ -1,5 +1,3 @@
-// src/attachments/attachments.controller.ts
-
 import {
   Controller,
   Get,

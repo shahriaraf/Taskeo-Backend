@@ -1,5 +1,3 @@
-// src/analytics/analytics.controller.ts
-
 import { Controller, Get } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AnalyticsService } from './analytics.service';
