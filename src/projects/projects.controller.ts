@@ -9,7 +9,6 @@ import {
   Body,
   Param,
   Query,
-  ParseUUIDPipe,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
@@ -60,7 +59,7 @@ export class ProjectsController {
   @ApiOperation({ summary: 'Get project by ID' })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   async findOne(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id') id: string,
     @CurrentUser('id') userId: string,
     @CurrentUser('role') userRole: string,
   ) {
@@ -70,7 +69,7 @@ export class ProjectsController {
 
   @Get(':id/stats')
   @ApiOperation({ summary: 'Get project statistics' })
-  async getStats(@Param('id', ParseUUIDPipe) id: string) {
+  async getStats(@Param('id') id: string) {
     const stats = await this.projectsService.getProjectStats(id);
     return ApiResponse.success(stats, 'Project stats retrieved');
   }
@@ -78,7 +77,7 @@ export class ProjectsController {
   @Patch(':id')
   @ApiOperation({ summary: 'Update project' })
   async update(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id') id: string,
     @Body() dto: UpdateProjectDto,
     @CurrentUser('id') userId: string,
     @CurrentUser('role') userRole: string,
@@ -92,7 +91,7 @@ export class ProjectsController {
   @Roles(UserRole.admin, UserRole.project_manager)
   @ApiOperation({ summary: 'Delete project' })
   async remove(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id') id: string,
     @CurrentUser('id') userId: string,
     @CurrentUser('role') userRole: string,
   ) {

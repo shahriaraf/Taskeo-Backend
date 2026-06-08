@@ -238,4 +238,65 @@ export class AnalyticsService {
       take: 5,
     });
   }
+
+  async getProgressTrend(userId: string, userRole: string) {
+  const taskWhere =
+    userRole === 'team_member'
+      ? { assigneeId: userId }
+      : userRole !== 'admin'
+      ? { project: { members: { some: { userId } } } }
+      : {};
+
+  const sixWeeksAgo = new Date();
+  sixWeeksAgo.setDate(sixWeeksAgo.getDate() - 42);
+
+  const [createdTasks, completedTasks] = await Promise.all([
+    this.prisma.task.findMany({
+      where: {
+        ...taskWhere,
+        createdAt: { gte: sixWeeksAgo },
+      },
+      select: { createdAt: true },
+    }),
+    this.prisma.task.findMany({
+      where: {
+        ...taskWhere,
+        status: TaskStatus.completed,
+        updatedAt: { gte: sixWeeksAgo },
+      },
+      select: { updatedAt: true },
+    }),
+  ]);
+
+  // Build 6 week buckets from oldest → newest
+  const weeks = Array.from({ length: 6 }, (_, i) => {
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - (5 - i) * 7 - 6);
+    startDate.setHours(0, 0, 0, 0);
+
+    const endDate = new Date();
+    endDate.setDate(endDate.getDate() - (5 - i) * 7);
+    endDate.setHours(23, 59, 59, 999);
+
+    return { week: `W${i + 1}`, created: 0, completed: 0, startDate, endDate };
+  });
+
+  createdTasks.forEach((task) => {
+    const d = new Date(task.createdAt);
+    const bucket = weeks.find((w) => d >= w.startDate && d <= w.endDate);
+    if (bucket) bucket.created++;
+  });
+
+  completedTasks.forEach((task) => {
+    const d = new Date(task.updatedAt);
+    const bucket = weeks.find((w) => d >= w.startDate && d <= w.endDate);
+    if (bucket) bucket.completed++;
+  });
+
+  return weeks.map(({ week, created, completed }) => ({
+    week,
+    created,
+    completed,
+  }));
+}
 }

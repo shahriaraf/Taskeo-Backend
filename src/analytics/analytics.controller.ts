@@ -10,7 +10,7 @@ import { ApiResponse } from '../common/response/api-response';
 @ApiBearerAuth('JWT-auth')
 @Controller('analytics')
 export class AnalyticsController {
-  constructor(private analyticsService: AnalyticsService) {}
+  constructor(private analyticsService: AnalyticsService) { }
 
   @Get('dashboard')
   @ApiOperation({ summary: 'Get full dashboard data' })
@@ -80,5 +80,15 @@ export class AnalyticsController {
   ) {
     const data = await this.analyticsService.getHighPriorityTasks(userId, userRole);
     return ApiResponse.success(data, 'High priority tasks retrieved');
+  }
+
+  @Get('progress-trend')
+  @ApiOperation({ summary: 'Get task progress trend over last 6 weeks' })
+  async getProgressTrend(
+    @CurrentUser('id') userId: string,
+    @CurrentUser('role') userRole: string,
+  ) {
+    const data = await this.analyticsService.getProgressTrend(userId, userRole);
+    return ApiResponse.success(data, 'Progress trend retrieved');
   }
 }
