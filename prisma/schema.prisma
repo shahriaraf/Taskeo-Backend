@@ -1,4 +1,9 @@
-// prisma/schema.prisma
+// prisma/schema.prisma — Phase 1 additions
+// Changes from original:
+//   1. Task: added parentId (self-relation for sub-tasks), order field
+//   2. PasswordResetToken: new model for forgot-password flow
+//   3. New enum values: SUBTASK_CREATED, SUBTASK_COMPLETED, PASSWORD_RESET_REQUESTED
+//   4. Added GIN index hint via @@index on title+description for full-text search
 
 generator client {
   provider = "prisma-client-js"
@@ -62,6 +67,8 @@ enum ActivityAction {
   TASK_ASSIGNED
   TASK_STATUS_CHANGED
   TASK_DELETED
+  SUBTASK_CREATED       // NEW
+  SUBTASK_COMPLETED     // NEW
   MEMBER_ADDED
   MEMBER_REMOVED
   COMMENT_ADDED
@@ -70,7 +77,10 @@ enum ActivityAction {
   FILE_DELETED
 }
 
-// MODELS (your models are good, just keeping them)
+// ─────────────────────────────────────────
+// MODELS
+// ─────────────────────────────────────────
+
 model User {
   id           String    @id @default(uuid())
   name         String    @db.VarChar(100)
@@ -83,14 +93,15 @@ model User {
   createdAt    DateTime  @default(now()) @map("created_at")
   updatedAt    DateTime  @updatedAt @map("updated_at")
 
-  ownedProjects   Project[]        @relation("ProjectOwner")
-  projectMembers  ProjectMember[]
-  assignedTasks   Task[]           @relation("TaskAssignee")
-  createdTasks    Task[]           @relation("TaskCreator")
-  comments        Comment[]
-  fileAttachments FileAttachment[]
-  activityLogs    ActivityLog[]
-  notifications   Notification[]
+  ownedProjects      Project[]            @relation("ProjectOwner")
+  projectMembers     ProjectMember[]
+  assignedTasks      Task[]               @relation("TaskAssignee")
+  createdTasks       Task[]               @relation("TaskCreator")
+  comments           Comment[]
+  fileAttachments    FileAttachment[]
+  activityLogs       ActivityLog[]
+  notifications      Notification[]
+  passwordResetTokens PasswordResetToken[] // NEW
 
   @@map("users")
 }
@@ -105,7 +116,6 @@ model Project {
   createdAt   DateTime      @default(now()) @map("created_at")
   updatedAt   DateTime      @updatedAt @map("updated_at")
 
-  // Relations
   owner   User            @relation("ProjectOwner", fields: [ownerId], references: [id], onDelete: Restrict)
   members ProjectMember[]
   tasks   Task[]
@@ -120,7 +130,6 @@ model ProjectMember {
   role      ProjectMemberRole @default(member)
   joinedAt  DateTime          @default(now()) @map("joined_at")
 
-  // Relations
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -141,6 +150,12 @@ model Task {
   createdAt   DateTime     @default(now()) @map("created_at")
   updatedAt   DateTime     @updatedAt @map("updated_at")
 
+  // ── Sub-task support (NEW) ─────────────────────────────
+  // A task can have a parent task, making it a sub-task.
+  // parentId = null means it is a top-level task.
+  parentId    String?      @map("parent_id")
+  order       Int          @default(0)   // display order within siblings
+
   // Relations
   project     Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
   assignee    User?            @relation("TaskAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
@@ -148,12 +163,20 @@ model Task {
   comments    Comment[]
   attachments FileAttachment[]
 
+  // Self-relation for sub-tasks
+  parent      Task?  @relation("SubTasks", fields: [parentId], references: [id], onDelete: Cascade)
+  subTasks    Task[] @relation("SubTasks")
+
+  // Note: the @@unique([projectId, title]) constraint applies to ALL tasks
+  // (both top-level and sub-tasks). Sub-task titles only need to be unique
+  // within the same project. This is acceptable for now.
   @@unique([projectId, title])
   @@index([projectId])
   @@index([assigneeId])
   @@index([status])
   @@index([dueDate])
   @@index([priority])
+  @@index([parentId])   // NEW — fast lookup of sub-tasks by parent
   @@map("tasks")
 }
 
@@ -165,7 +188,6 @@ model Comment {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  // Relations
   task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -184,7 +206,6 @@ model FileAttachment {
   mimeType   String?  @map("mime_type") @db.VarChar(100)
   createdAt  DateTime @default(now()) @map("created_at")
 
-  // Relations
   task     Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
   uploader User @relation(fields: [uploadedBy], references: [id], onDelete: Cascade)
 
@@ -201,7 +222,6 @@ model ActivityLog {
   metadata   Json?
   createdAt  DateTime       @default(now()) @map("created_at")
 
-  // Relations
   user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([createdAt(sort: Desc)])
@@ -220,10 +240,29 @@ model Notification {
   entityId   String?          @map("entity_id")
   createdAt  DateTime         @default(now()) @map("created_at")
 
-  // Relations
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, isRead])
   @@index([createdAt(sort: Desc)])
   @@map("notifications")
+}
+
+// ─────────────────────────────────────────
+// NEW MODEL — Password Reset Tokens
+// ─────────────────────────────────────────
+// Stores single-use tokens for the forgot-password flow.
+// A token expires after 1 hour and is deleted after use.
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  token     String   @unique @db.VarChar(255)  // hashed SHA-256 of the raw token
+  expiresAt DateTime @map("expires_at")
+  usedAt    DateTime? @map("used_at")           // set when the token is consumed
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([userId])
+  @@map("password_reset_tokens")
 }

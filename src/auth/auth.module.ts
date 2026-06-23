@@ -12,6 +12,8 @@ import { RolesGuard } from './guards/roles.guard';
 import { ActivityLogsModule } from '../activity-logs/activity-logs.module';
 import { PrismaModule } from '../prisma/prisma.module';
 import { RedisModule } from '../common/redis/redis.module';
+import { PasswordResetService } from './password-reset.service';
+import { MailService } from 'mail/mail.service';
 
 @Module({
   imports: [
@@ -40,6 +42,8 @@ import { RedisModule } from '../common/redis/redis.module';
   providers: [
     AuthService,
     JwtStrategy,
+    PasswordResetService,
+    MailService,
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
   ],

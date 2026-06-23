@@ -10,10 +10,17 @@ import { ConfigService } from '@nestjs/config';
 import cookieParser from 'cookie-parser';
 import compression from 'compression';
 import helmet from 'helmet';
+import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
+import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
-    logger: ['error', 'warn', 'log', 'debug'],
+    // In production, only log errors and warnings.
+    // In development, log everything including debug messages.
+    logger:
+      process.env.NODE_ENV === 'production'
+        ? ['error', 'warn']
+        : ['error', 'warn', 'log', 'debug'],
   });
 
   const configService = app.get(ConfigService);
@@ -21,12 +28,12 @@ async function bootstrap() {
   const frontendUrl = configService.get<string>('app.frontendUrl');
   const nodeEnv = configService.get<string>('app.nodeEnv') ?? 'development';
 
-  // Security & Performance Middleware
+  // ── Security & Performance Middleware ────────────────
   app.use(helmet());
   app.use(compression());
   app.use(cookieParser());
 
-  // CORS
+  // ── CORS ─────────────────────────────────────────────
   app.enableCors({
     origin: [
       frontendUrl,
@@ -34,38 +41,44 @@ async function bootstrap() {
       'http://localhost:3001',
       'http://127.0.0.1:3000',
       'http://127.0.0.1:3001',
-      'https://taskeo-blue.vercel.app'
+      'https://taskeo-blue.vercel.app',
     ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   });
 
-  // API Versioning
+  // ── API Versioning ────────────────────────────────────
   app.enableVersioning({
     type: VersioningType.URI,
     defaultVersion: '1',
     prefix: 'api/v',
   });
 
-  // Global Pipes & Interceptors
+  // ── Global Pipes ─────────────────────────────────────
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: false,
-      transform: true,
+      whitelist: true,              // Strip fields not in the DTO
+      forbidNonWhitelisted: false,  // Don't throw on extra fields (just strip them)
+      transform: true,              // Auto-convert types (e.g. "1" → 1)
       transformOptions: { enableImplicitConversion: true },
       forbidUnknownValues: false,
     }),
   );
 
-  app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
+  // ── Global Filters & Interceptors ────────────────────
+  // Order matters: filter catches errors, interceptors wrap the pipeline
+  app.useGlobalFilters(new GlobalExceptionFilter());
+  app.useGlobalInterceptors(
+    new LoggingInterceptor(),
+    new ClassSerializerInterceptor(app.get(Reflector)),
+  );
 
-  // Swagger (only in development)
+  // ── Swagger (development only) ────────────────────────
   if (nodeEnv !== 'production') {
     const config = new DocumentBuilder()
-      .setTitle('Smart Project & Task Collaboration API')
-      .setDescription('Full API documentation')
+      .setTitle('Taskeo API')
+      .setDescription('Full API documentation for the Taskeo project management platform')
       .setVersion('1.0')
       .addBearerAuth(
         { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
@@ -87,13 +100,15 @@ async function bootstrap() {
     });
   }
 
-  // Graceful Shutdown
+  // ── Graceful Shutdown ─────────────────────────────────
   app.enableShutdownHooks();
 
   await app.listen(port);
 
-  console.log(`Server running on: http://localhost:${port}`);
-  console.log(`Swagger docs: http://localhost:${port}/api/docs`);
+  console.log(`\n🚀  Server running on: http://localhost:${port}`);
+  if (nodeEnv !== 'production') {
+    console.log(`📖  Swagger docs:      http://localhost:${port}/api/docs\n`);
+  }
 }
 
 bootstrap().catch((error) => {

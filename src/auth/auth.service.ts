@@ -29,7 +29,6 @@ export class AuthService {
   ) {}
 
   async signup(dto: SignupDto) {
-    // Check duplicate email
     const existingUser = await this.prisma.user.findUnique({
       where: { email: dto.email.toLowerCase() },
     });
@@ -38,10 +37,8 @@ export class AuthService {
       throw new ConflictException('Email is already registered');
     }
 
-    // Hash password
     const passwordHash = await bcrypt.hash(dto.password, 12);
 
-    // Create user
     const user = await this.prisma.user.create({
       data: {
         name: dto.name,
@@ -59,10 +56,9 @@ export class AuthService {
       },
     });
 
-    // Log activity
     await this.activityLogsService.log({
       userId: user.id,
-      action: ActivityAction.PROJECT_CREATED, // Reuse or add USER_REGISTERED
+      action: ActivityAction.PROJECT_CREATED,
       entityType: 'user',
       entityId: user.id,
       metadata: { userName: user.name },
@@ -79,6 +75,8 @@ export class AuthService {
     });
 
     if (!user || !user.isActive) {
+      // Use a consistent error message to prevent user enumeration attacks.
+      // Never say "user not found" vs "wrong password" separately.
       throw new UnauthorizedException('Invalid credentials');
     }
 
@@ -87,7 +85,6 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    // Update last login
     await this.prisma.user.update({
       where: { id: user.id },
       data: { lastLogin: new Date() },
@@ -131,27 +128,50 @@ export class AuthService {
     };
   }
 
-  async refreshTokens(userId: string, refreshToken: string) {
-    const storedToken = await this.redisService.getRefreshToken(userId);
+  /**
+   * Refresh token rotation:
+   * 1. Verify the incoming refresh token exists in Redis for this user.
+   * 2. Immediately delete it (one-time use — prevents replay attacks).
+   * 3. Issue a brand-new access token AND a brand-new refresh token.
+   * 4. Store the new refresh token in Redis.
+   *
+   * This means if an attacker steals a refresh token and uses it first,
+   * the legitimate user's next refresh will fail and they will be logged out —
+   * alerting them that something is wrong.
+   */
+async refreshTokens(userId: string, incomingRefreshToken: string) {
+  const storedToken = await this.redisService.getRefreshToken(userId);
 
-    if (!storedToken || storedToken !== refreshToken) {
-      throw new UnauthorizedException('Invalid refresh token');
-    }
-
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: { id: true, email: true, role: true, isActive: true },
-    });
-
-    if (!user || !user.isActive) {
-      throw new UnauthorizedException('User not found or inactive');
-    }
-
-    const tokens = await this.generateTokens(user.id, user.email, user.role);
-    return tokens;
+  if (!storedToken) {
+    this.logger.warn(`No refresh token found for user ${userId}`);
+    throw new UnauthorizedException('Invalid or expired refresh token. Please log in again.');
   }
 
+  if (storedToken !== incomingRefreshToken) {
+    // Possible replay or multiple tabs/devices — invalidate
+    await this.redisService.deleteRefreshToken(userId);
+    this.logger.warn(`Suspicious refresh attempt for user ${userId}. Session invalidated.`);
+    throw new UnauthorizedException('Invalid or expired refresh token. Please log in again.');
+  }
+
+  // Rest of your code remains the same...
+  await this.redisService.deleteRefreshToken(userId);
+
+  const user = await this.prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, email: true, role: true, isActive: true },
+  });
+
+  if (!user || !user.isActive) {
+    throw new UnauthorizedException('User not found or inactive');
+  }
+
+  const tokens = await this.generateTokens(user.id, user.email, user.role);
+  return tokens;
+}
+
   async logout(userId: string) {
+    // Delete the refresh token from Redis so it cannot be reused
     await this.redisService.deleteRefreshToken(userId);
     return { message: 'Logged out successfully' };
   }
@@ -163,9 +183,9 @@ export class AuthService {
       this.jwtService.signAsync(payload, {
         expiresIn: this.configService.get<number>('jwt.accessExpiresIn') ?? '15m',
       }),
-      uuidv4(), // Opaque refresh token
+      uuidv4(), // Opaque, high-entropy refresh token (not a JWT — cannot be decoded)
     ]);
-    // Store refresh token in Redis
+
     const refreshTtl = 7 * 24 * 60 * 60; // 7 days in seconds
     await this.redisService.storeRefreshToken(userId, refreshToken, refreshTtl);
 

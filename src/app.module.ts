@@ -1,8 +1,8 @@
+// src/app.module.ts  (Phase 1 — adds SearchModule, MailModule to imports)
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
-import { ThrottlerGuard } from '@nestjs/throttler';
 
 import configuration from './config/configuration';
 import { validate } from './config/env.validation';
@@ -20,41 +20,27 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { CommentsModule } from './comments/comments.module';
 import { AttachmentsModule } from './attachments/attachments.module';
 import { EventsModule } from './events/events.module';
+import { SearchModule } from './search/search.module';   // NEW
+import { MailModule } from './mail/mail.module';           // NEW
+import { CustomThrottlerGuard } from './auth/guards/custom-throttler.guard';
+import { BurnoutModule } from 'burnout/burnout.module';
+import { PostMortemModule } from 'postmortem/postmortem.module';
 
 @Module({
   imports: [
-    // ─── Config ─────────────────────────────────────
     ConfigModule.forRoot({
       isGlobal: true,
       load: [configuration],
       validate,
     }),
-
-    // ─── Rate Limiting ───────────────────────────────
     ThrottlerModule.forRoot([
-      {
-        name: 'short',
-        ttl: 1000,
-        limit: 10,
-      },
-      {
-        name: 'medium',
-        ttl: 10000,
-        limit: 50,
-      },
-      {
-        name: 'long',
-        ttl: 60000,
-        limit: 100,
-      },
+      { name: 'short', ttl: 1000, limit: 10 },
+      { name: 'medium', ttl: 10000, limit: 50 },
+      { name: 'long', ttl: 60000, limit: 150 },
     ]),
-
-    // ─── Core Modules ────────────────────────────────
     PrismaModule,
     RedisModule,
     EventsModule,
-
-    // ─── Feature Modules ────────────────────────────
     AuthModule,
     UsersModule,
     ProjectsModule,
@@ -65,12 +51,16 @@ import { EventsModule } from './events/events.module';
     NotificationsModule,
     CommentsModule,
     AttachmentsModule,
+    SearchModule,  
+    MailModule,
+    BurnoutModule,
+    PostMortemModule 
   ],
   providers: [
     {
       provide: APP_GUARD,
-      useClass: ThrottlerGuard,
+      useClass: CustomThrottlerGuard,
     },
   ],
 })
-export class AppModule {}
+export class AppModule { }
